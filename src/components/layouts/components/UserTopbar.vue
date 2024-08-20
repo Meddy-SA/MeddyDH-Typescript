@@ -1,22 +1,27 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
+import { useAuthStore } from '../../../stores/index.ts'
 import Menu from 'primevue/menu';
 import Avatar from 'primevue/avatar';
 import Badge from 'primevue/badge';
-import Logo from '../../../assets/favicon.png'
+import SvgLogo from '@/assets/svgs/meddylogo.svg?component'
+import SvgLogoText from '@/assets/svgs/meddysa.svg?component'
 import type { MenuItem } from 'primevue/menuitem';
 
+const authStore = useAuthStore()
 const menuUser = ref()
+
 const showMenuUser = (ev: Event) => {
   menuUser.value.toggle(ev)
 }
+
 const itemsUser = ref<MenuItem[]>([
   {
     separator: true
   },
   {
-    label: 'Tecno Créditos',
+    label: 'Desarrollo Humano',
     items: [
       {
         label: 'Nuevo',
@@ -48,6 +53,7 @@ const itemsUser = ref<MenuItem[]>([
         icon: 'pi pi-sign-out',
         shortcut: '⌘+Q',
         command: () => {
+          authStore.logout()
         }
       }
     ]
@@ -60,12 +66,13 @@ const itemsUser = ref<MenuItem[]>([
 </script>
 
 <template>
-  <Avatar @click="showMenuUser" :image="Logo" class="flex mx-3 hover:cursor-pointer" shape="circle" />
+  <Avatar @click="showMenuUser" :image="authStore.avatar" class="flex mx-3 hover:cursor-pointer" shape="circle"
+    size="large" />
   <Menu ref="menuUser" :model="itemsUser" class="w-15rem" :popup="true">
     <template #start>
       <span class="inline-flex align-items-center gap-1 px-2 py-2">
-        <Avatar @click="showMenuUser" :image="Logo" class="flex mx-3 hover:cursor-pointer" shape="circle" />
-        <span class="text-primary">Tecno Créditos</span>
+        <SvgLogo class="mr-3 h-8" width="32" height="32" />
+        <SvgLogoText width="96" height="36" viewBox="0 0 375 90" />
       </span>
     </template>
     <template #submenuheader="{ item }">
@@ -83,10 +90,10 @@ const itemsUser = ref<MenuItem[]>([
     <template #end>
       <button
         class="relative overflow-hidden w-full p-link flex align-items-center p-2 pl-3 text-color hover:surface-200 border-noround">
-        <Avatar :image="Logo" class="mr-2" shape="circle" />
+        <Avatar :image="authStore.avatar" class="mr-2" shape="circle" />
         <span class="inline-flex flex-col">
-          <span class="font-bold">Leonardo Illanez</span>
-          <span class="text-xs text-wrap">leonardoillanez@meddyai.com</span>
+          <span class="font-bold">{{ authStore.name }}</span>
+          <span class="text-xs text-wrap">{{ authStore.email }}</span>
         </span>
       </button>
     </template>

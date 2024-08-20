@@ -11,3 +11,20 @@ export interface MessageNotify {
   description: string;
   badge?: string;
 }
+
+export interface Alert {
+  id: string;
+  msg: string;
+  severity: 'success' | 'info' | 'warn' | 'error';
+  read: boolean;
+  summary: string;
+  life: number;
+}
+
+export interface MenuItem {
+  name: string;
+  icon?: string;
+  items?: MenuItem[];
+  command?: string;
+  style?: string;
+}
