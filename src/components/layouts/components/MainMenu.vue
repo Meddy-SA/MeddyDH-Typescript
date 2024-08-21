@@ -1,31 +1,30 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { default as router } from '../../../routers/index.ts'
-import { useAuthStore } from '../../../stores/index.ts'
-import Button from 'primevue/button'
-import BreadCrumb from './Breadcrumb.vue'
-import Drawer from 'primevue/drawer'
-import Avatar from 'primevue/avatar'
-import SvgLogo from '@/assets/svgs/meddylogo.svg?component'
-import SvgLogoText from '../../../assets/svgs/meddysa.svg?component'
-import ItemMenu from './ItemMenu.vue'
-const visibleMainMenu = ref(false)
+import { ref } from "vue";
+import { default as router } from "../../../routers/index.ts";
+import { useAuthStore } from "../../../stores/index.ts";
+import Button from "primevue/button";
+import BreadCrumb from "./Breadcrumb.vue";
+import Drawer from "primevue/drawer";
+import Avatar from "primevue/avatar";
+import SvgLogo from "@/assets/svgs/meddylogo.svg?component";
+import SvgLogoText from "../../../assets/svgs/meddysa.svg?component";
+import ItemMenu from "./ItemMenu.vue";
+const visibleMainMenu = ref(false);
 
-const authStore = useAuthStore()
-const menuData = ref(authStore.getMenu)
+const authStore = useAuthStore();
+const menuData = ref(authStore.getMenu);
 
 const gotoUrl = (uri: string) => {
-  router.push(uri)
-}
+  router.push(uri);
+};
 
 const toggleAside = () => {
-  visibleMainMenu.value = !visibleMainMenu.value
-}
-
+  visibleMainMenu.value = !visibleMainMenu.value;
+};
 </script>
 
 <template>
-  <div class="card flex justify-content-center">
+  <div class="flex justify-content-center">
     <Button icon="pi pi-bell" text severity="secondary" @click="toggleAside">
       <svg aria-hidden="true" class="w-6 h-6" fill="var(--p-button-secondary-color)" viewBox="0 0 20 20"
         xmlns="http://www.w3.org/2000/svg">
@@ -43,7 +42,6 @@ const toggleAside = () => {
     <div class="flex items-center ml-4">
       <BreadCrumb />
     </div>
-
 
     <Drawer v-model:visible="visibleMainMenu">
       <template #container="{ closeCallback }">
@@ -68,16 +66,18 @@ const toggleAside = () => {
                   enterClass: 'hidden',
                   enterActiveClass: 'slidedown',
                   leaveToClass: 'hidden',
-                  leaveActiveClass: 'slideup'
+                  leaveActiveClass: 'slideup',
                 }" class="p-3 flex items-center justify-between text-600 cursor-pointer p-ripple">
-                  <span class="font-medium dark:text-gray-300">{{ item.name }}</span>
+                  <span class="font-medium dark:text-gray-300">{{
+                    item.name
+                    }}</span>
                   <i class="pi pi-chevron-down"></i>
                 </div>
                 <ul class="list-none p-0 m-0 overflow-hidden">
                   <li v-for="child in item.items">
                     <ItemMenu v-if="child.items && child.items.length > 0" :items="child" />
-                    <a v-else v-ripple @click="gotoUrl(child.command!)" class="flex items-center cursor-pointer p-3 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors duration-150 p-ripple
-																		dark:text-gray-400 dark:hover:bg-gray-700">
+                    <a v-else v-ripple @click="gotoUrl(child.command!)"
+                      class="flex items-center cursor-pointer p-3 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors duration-150 p-ripple dark:text-gray-400 dark:hover:bg-gray-700">
                       <i v-if="child.icon && child.icon.startsWith('pi')" class="mr-2" :class="child.icon"></i>
                       <box-icon v-else :name="child.icon" :type="child.style"
                         class="mr-2 fill-gray-600 dark:fill-gray-200"></box-icon>
@@ -91,8 +91,8 @@ const toggleAside = () => {
           <!-- Footer -->
           <div class="mt-auto">
             <hr class="mb-3 mx-3 border-t-1 border-gray-150" />
-            <a class="m-3 flex items-center cursor-pointer p-3 gap-2 rounded-xl text-gray-700 hover:bg-gray-100 
-								duration-150 transition-colors p-ripple dark:text-gray-300 dark:hover:bg-gray-700">
+            <a
+              class="m-3 flex items-center cursor-pointer p-3 gap-2 rounded-xl text-gray-700 hover:bg-gray-100 duration-150 transition-colors p-ripple dark:text-gray-300 dark:hover:bg-gray-700">
               <Avatar :image="authStore.avatar" shape="circle" />
               <span class="font-bold">{{ authStore.name }}</span>
             </a>
@@ -100,6 +100,5 @@ const toggleAside = () => {
         </div>
       </template>
     </Drawer>
-
   </div>
 </template>

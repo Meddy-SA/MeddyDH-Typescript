@@ -11,8 +11,16 @@ const route: RouteRecordRaw = {
   children: [
     { path: "", redirect: "home" },
     { path: "home", meta, component: Home },
-    { path: "medicamentos", meta, component: Medicamentos },
-    { path: "listado", meta, component: Listado },
+    {
+      path: "medicamentos",
+      meta: { ...meta, breadcrumb: "Medicamentos" },
+      component: Medicamentos,
+    },
+    {
+      path: "listado",
+      meta: { ...meta, breadcrumb: "Listado de Medicamentos" },
+      component: Listado,
+    },
   ],
 };
 
