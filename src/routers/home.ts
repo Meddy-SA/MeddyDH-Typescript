@@ -1,18 +1,19 @@
-import Layout from '../components/layouts/Default.vue'
-import { Home } from '../views/index.ts'
-import { Medicamentos } from '../views/humano/index.ts'
-import { type RouteRecordRaw } from 'vue-router'
+import Layout from "../components/layouts/Default.vue";
+import { Home } from "../views/index.ts";
+import { Medicamentos, Listado } from "../views/humano/index.ts";
+import { type RouteRecordRaw } from "vue-router";
 
-const meta = { auth: false }
+const meta = { auth: true };
 
 const route: RouteRecordRaw = {
-  path: '/',
+  path: "/",
   component: Layout,
   children: [
-    { path: '', redirect: 'home' },
-    { path: 'home', meta, component: Home },
-    { path: 'medicamentos', meta, component: Medicamentos }
-  ]
-}
+    { path: "", redirect: "home" },
+    { path: "home", meta, component: Home },
+    { path: "medicamentos", meta, component: Medicamentos },
+    { path: "listado", meta, component: Listado },
+  ],
+};
 
-export default route
+export default route;

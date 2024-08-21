@@ -10,9 +10,12 @@ import Medicamentos from "./components/Medicamentos.vue";
 // Services
 import { useSystemStore } from "../../stores/system";
 import { usePrestadorStore } from "../../stores/prestadores";
+import { useHumanoStore } from "../../stores/humano";
+import { useAlertStore } from "../../stores";
 import { FilterMatchMode } from "@primevue/core/api";
 import { useVuelidate } from "@vuelidate/core";
 import { required, minValue } from "@vuelidate/validators";
+import { useRouter } from "vue-router";
 // Tools
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -29,8 +32,10 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 
 // Constant for Services
+const alert = useAlertStore();
 const system = useSystemStore();
 const prestador = usePrestadorStore();
+const expediente = useHumanoStore();
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
@@ -61,14 +66,14 @@ const medDTO = reactive({
   farmacia: baseFarmacia,
   prestadoresId: 0,
   estado: baseEstado,
-  medicamentos: [],
+  medicamentos: [] as DetailsMed[],
   rows: 0,
 });
 
 // Validate
 const rules = {
   fecha: { required },
-  farmacia: { nombre: { required } },
+  // farmacia: { nombre: { required } },
   rows: { minValue: minValue(1) },
 };
 const v$ = useVuelidate(rules, medDTO);
@@ -77,7 +82,7 @@ const v$ = useVuelidate(rules, medDTO);
 onMounted(async () => {
   const r = await system.dispatchGetFecha();
   if (r.success) {
-    minDate.value = system.state ?? new Date();
+    minDate.value = new Date();
   }
   const { success } = await prestador.dispatchGetFarmacias();
   if (success) {
@@ -118,13 +123,18 @@ const deleteProduct = () => {
 const onExpediente = async (m: MedicamentoDTO) => {
   try {
     medDTO.id = m.id;
-    const fecha = new Date(m.fecha);
+    let fechaString = m.fecha.toString().split("T")[0];
+    let fecha = new Date(fechaString);
+    if (isNaN(fecha.getTime()) || fechaString === "0001-01-01") {
+      fecha = minDate.value; // Usa minDate si la fecha es inválida o es "0001-01-01"
+    }
+
     medDTO.fecha = fecha;
     medDTO.fechaString = fecha.toISOString();
     medDTO.expediente = m.expediente;
-    medDTO.farmacia = m.farmacia!;
+    medDTO.farmacia = m.farmacia ?? baseFarmacia;
     medDTO.prestadoresId = m.prestadoresId;
-    medDTO.estado = m.estado;
+    medDTO.estado = m.estado ?? baseEstado;
     if (m.medicamentos && m.medicamentos.length > 0) {
       rowsMedic.value = [...m.medicamentos];
       rowsMedic.value.forEach((row) => {
@@ -166,6 +176,37 @@ const onCloseMedicamento = () => {
   product.value = null;
   medDTO.rows = rowsMedic.value.length;
 };
+
+// Zona de Guardado
+const saveMedicamento = async () => {
+  loading.value = true;
+  try {
+    const isFormCorrect = await v$.value.$validate();
+    if (!isFormCorrect) {
+      loading.value = false;
+      return;
+    }
+    medDTO.medicamentos = rowsMedic.value;
+    medDTO.farmacia = farmaciaSelected.value ?? baseFarmacia;
+    medDTO.prestadoresId = farmaciaSelected.value?.prestadorId ?? 0;
+    const { success } = await expediente.dispatchPostExpediente(medDTO);
+    if (success) {
+      alert.toastAlert(`Se grabo correctamente`, "success", 10, "Genial!");
+      cleanData();
+    } else {
+      alert.toastAlert(`Error al guardar`, "error", 10, "Atención 🟡");
+    }
+  } catch (error) {
+    alert.exception(error, 10);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const router = useRouter();
+const cleanData = () => {
+  router.go(0);
+};
 </script>
 
 <template>
@@ -179,15 +220,15 @@ const onCloseMedicamento = () => {
     </Toolbar>
 
     <div class="flex flex-col gap-4">
-      <Expediente @on-get-expediente="onExpediente" />
+      <Expediente @on-get-expediente="onExpediente" @on-clean-expediente="cleanData" :exp="medDTO.expediente" />
       <div v-if="medDTO.id > -1" class="grid grid-cols-6 gap-4">
         <div class="col-span-6 sm:col-span-3">
           <label for="plan" class="labelInput">Farmacia</label>
           <Select inputId="plan" v-model="farmaciaSelected" :options="farmacias" :loading="loading" optionLabel="nombre"
             pt:root:class="w-full" placeholder="Seleccione una Farmacia" checkmark />
-          <p class="mt-0 text-sm text-red-600 dark:text-red-500">
-            <span v-if="v$.farmacia.nombre.required.$invalid">Debe seleccionar una farmacia</span>
-          </p>
+          <!-- <p class="mt-0 text-sm text-red-600 dark:text-red-500"> -->
+          <!--   <span v-if="v$.farmacia.nombre.required.$invalid">Debe seleccionar una farmacia</span> -->
+          <!-- </p> -->
         </div>
 
         <div class="col-span-6 sm:col-span-3">
@@ -258,7 +299,8 @@ const onCloseMedicamento = () => {
         </div>
 
         <div class="col-span-6 flex justify-center p-2">
-          <Button label="Guardar cambios" icon="pi pi-save" severity="success" :loading="loading" />
+          <Button label="Guardar cambios" icon="pi pi-save" severity="success" :loading="loading"
+            @click="saveMedicamento" />
         </div>
       </div>
     </div>

@@ -41,10 +41,17 @@ const getDesarrolloHumano = async () => {
     if (success) {
       iconButton.value = "pi pi-refresh";
       expedienteCargado.value = true;
+      humano.state!.id = humano.state?.id === -1 ? 0 : humano.state!.id;
+      humano.state!.expediente =
+        humano.state?.expediente ?? expedienteNumber.value;
       emit("onGetExpediente", humano.state);
     } else {
-      emit("onGetExpediente", expedienteNumber.value);
-      alerts.toastAlert("Creando expediente nuevo.", "info", 10, "Atención ⚠️");
+      alerts.toastAlert(
+        "Error al recuperar expediente",
+        "warn",
+        10,
+        "Atención ⚠️"
+      );
     }
   } catch (error) {
     alerts.exception(error, 10);
