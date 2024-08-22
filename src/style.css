@@ -33,9 +33,8 @@ body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 320px;
+  min-width: 100vw;
   min-height: 100vh;
-  /*background: linear-gradient(90deg, #242424 0%, #0a061a 100%);*/
 }
 
 h1 {

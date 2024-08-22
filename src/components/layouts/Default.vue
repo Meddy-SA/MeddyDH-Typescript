@@ -28,7 +28,7 @@ watch(
 
 <template>
   <Toast />
-  <div class="static h-screen w-screen min-w-screen min-h-screen bg-sky-50 sm:pr-24">
+  <div class="static h-screen w-screen min-w-screen min-h-screen bg-sky-50 sm:pr-16">
     <div class="z-1 overflow-x-hidden relative">
       <nav class="px-4 py-2.5 fixed left-0 right-0 top-0 z-50 shadow-lg bg-indigo-200/20">
         <div class="flex flex-wrap justify-between items-center">

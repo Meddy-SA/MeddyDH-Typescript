@@ -5,6 +5,7 @@ import type {
   Alfabeta,
   UploadFile,
   DrogaDTO,
+  PrecioDTO,
 } from "../../services/alfabeta/types";
 import type { APIResponse } from "../../services/types";
 import { API } from "../../services";
@@ -13,6 +14,7 @@ import { handleApiError } from "../../services/errorHandler.ts";
 export const useAlfabetaStore = defineStore("alfabeta", () => {
   const state = ref<Alfabeta[]>([]);
   const drogas = ref<DrogaDTO[]>([]);
+  const precios = ref<PrecioDTO[]>([]);
 
   function initAlfabeta(data: Alfabeta[]): void {
     state.value = data;
@@ -21,6 +23,10 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
   function initDroga(data: DrogaDTO[]): void {
     drogas.value = data;
   }
+
+  const initPrecios = (data: PrecioDTO[]): void => {
+    precios.value = data;
+  };
 
   function uploadFileToAlfabeta(files: UploadFile[]) {
     state.value = state.value.map((alfabeta) => {
@@ -96,9 +102,42 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     }
   }
 
+  const dispatchGetMedPorNomComercial = async (
+    filter: string
+  ): Promise<APIResponse<string | null>> => {
+    try {
+      const { status, content, success } =
+        await API.alfabeta.getMedicamentoPorNombreComercial(filter);
+      if (status === 200) {
+        initDroga(content);
+        return { success: success, content: null };
+      }
+      throw new Error(`Unexpected status ${status}`);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  };
+
+  const dispatchGetPrecioPorManualDat = async (
+    id: number
+  ): Promise<APIResponse<string | null>> => {
+    try {
+      const { status, content, success } =
+        await API.alfabeta.getPreciosPorManualDat(id);
+      if (status === 200) {
+        initPrecios(content);
+        return { success: success, content: null };
+      }
+      throw new Error(`Unexpected status ${status}`);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  };
+
   return {
     state,
     drogas,
+    precios,
     uploadFileToAlfabeta,
     initAlfabeta,
     initDroga,
@@ -106,5 +145,7 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     dispatchFilterAlfabeta,
     dispatchUploadAlfabeta,
     dispatchGetHistorial,
+    dispatchGetMedPorNomComercial,
+    dispatchGetPrecioPorManualDat,
   };
 });

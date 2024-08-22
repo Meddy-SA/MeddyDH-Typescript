@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue";
 import DatePicker from "primevue/datepicker";
 import Button from "primevue/button";
 import Tag from "primevue/tag";
-// import Dialog from "primevue/dialog";
+import Dialog from "primevue/dialog";
 import Toolbar from "primevue/toolbar";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -16,7 +16,8 @@ import { useSystemStore } from "../../stores/system";
 import { useHumanoStore } from "../../stores/humano";
 import type { MedicamentoDTO } from "../../services/humano/types";
 
-// import RecetaPDF from './receta_pdf.vue'
+import RecetaPDF from "./components/Pdf.vue";
+
 const system = useSystemStore();
 const humano = useHumanoStore();
 const filters = ref({
@@ -70,7 +71,7 @@ const showModalPdf = (d: MedicamentoDTO) => {
 </script>
 
 <template>
-  <div class="card">
+  <div class="card w-full">
     <Toolbar class="mb-4">
       <template #start>
         <span class="text-2xl text-cyan-900 dark:text-cyan-600">Listado de Expedientes</span>
@@ -96,9 +97,9 @@ const showModalPdf = (d: MedicamentoDTO) => {
       </template>
     </Toolbar>
 
-    <div class="card mt-4">
+    <div class="w-full">
       <DataTable v-model:expandedRows="medicamentos" :value="rows" :filters="filters" data-key="id" size="small"
-        :loading="loading">
+        :loading="loading" class="w-full">
         <template #header>
           <div class="flex flex-wrap gap-2 items-center justify-end">
             <IconField iconPosition="left">
@@ -114,47 +115,39 @@ const showModalPdf = (d: MedicamentoDTO) => {
             <Tag :value="data.estado.nombre" :severity="data.estado.severity" />
           </template>
         </Column>
-        <Column field="id" header="Nº Receta"></Column>
+        <Column field="expediente" header="Nº Expediente"></Column>
         <Column field="fecha" header="Fecha">
           <template #body="{ data }">
-            {{ data.fecha }}
+            {{
+              new Date(data.fecha).toLocaleString("es-ES", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+            }}
           </template>
         </Column>
-        <Column field="afiliado" header="Afiliado">
+        <Column field="farmacia" header="Farmacia">
           <template #body="{ data }">
-            <div v-if="data.afiliado">
-              {{ data.afiliado.documento }} - {{ data.afiliado.nombre }}
-              {{ data.afiliado.apellido }}
+            <div v-if="data.farmacia">
+              {{ data.farmacia.apellido }} - {{ data.farmacia.nombre }}
             </div>
-          </template>
-        </Column>
-        <Column field="cie10" header="Diagnóstico">
-          <template #body="{ data }">
-            ({{ data.cie10.codigo }}) {{ data.cie10.nombre }}
-          </template>
-        </Column>
-        <Column field="plan" header="Plan">
-          <template #body="{ data }">
-            {{ data.plan.nombre }}
           </template>
         </Column>
         <Column headerStyle="width:4rem">
           <template #body="{ data }">
-            <Button icon="pi pi-print" @click="showModalPdf(data)" />
+            <Button label="Imprimir" severity="help" icon="pi pi-print" @click="showModalPdf(data)" />
           </template>
         </Column>
         <template #expansion="slotProps">
           <div class="p-3">
-            <h5>Receta Nº {{ slotProps.data.id }}</h5>
+            <h5>Expediente Nº {{ slotProps.data.expediente }}</h5>
             <DataTable :value="slotProps.data.medicamentos" :show-gridlines="true">
               <Column field="nombre" header="Nombre" sortable></Column>
-              <Column field="presentacion" header="Presentación" sortable></Column>
-              <Column field="dosis" header="Dosis" sortable></Column>
-              <Column field="frecuencia" header="Frecuencia" sortable></Column>
+              <Column field="cantidad" header="Cantidad" sortable></Column>
+              <Column field="precio" header="Precio" sortable></Column>
               <Column field="reconoce" header="Reconoce" sortable>
-                <template #body="{ data }">
-                  {{ data.reconoce }} {{ data.tipoReconoce.nombre }}
-                </template>
+                <template #body="{ data }"> {{ data.reconoce }} % </template>
               </Column>
               <Column field="estado" header="Estado" sortable>
                 <template #body="slotProps">
@@ -167,8 +160,8 @@ const showModalPdf = (d: MedicamentoDTO) => {
       </DataTable>
     </div>
 
-    <!-- <Dialog v-model:visible="showPDF" model> -->
-    <!--   <RecetaPDF :data="dataPdf" /> -->
-    <!-- </Dialog> -->
+    <Dialog v-model:visible="showPDF" model>
+      <RecetaPDF :data="dataPdf!" />
+    </Dialog>
   </div>
 </template>

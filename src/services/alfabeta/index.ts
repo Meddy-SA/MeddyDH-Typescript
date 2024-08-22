@@ -1,6 +1,6 @@
 import http from "../api.ts";
 import type { APIResponse, ResponseDTO } from "../types.ts";
-import type { Alfabeta, UploadFile, DrogaDTO } from "./types.ts";
+import type { Alfabeta, UploadFile, DrogaDTO, PrecioDTO } from "./types.ts";
 
 async function getAlfabeta(): Promise<APIResponse<Alfabeta[]>> {
   const res = await http.get<ResponseDTO<Alfabeta[]>>("Alfabeta/Actualiza");
@@ -54,6 +54,42 @@ async function getHistorialdePrecios(
   };
 }
 
+const getMedicamentoPorNombreComercial = async (
+  filter: string
+): Promise<APIResponse<DrogaDTO[]>> => {
+  const res = await http.get<ResponseDTO<DrogaDTO[]>>(
+    `Alfabeta/ManualDat?filter=${filter}`
+  );
+  if (res.data == null) {
+    return { success: false, content: {} as DrogaDTO[], status: res.status };
+  }
+
+  const r = res.data;
+  return {
+    success: r.success,
+    content: r.result ?? ({} as DrogaDTO[]),
+    status: res.status,
+  };
+};
+
+const getPreciosPorManualDat = async (
+  id: number
+): Promise<APIResponse<PrecioDTO[]>> => {
+  const res = await http.get<ResponseDTO<PrecioDTO[]>>(
+    `Alfabeta/ManualDat/${id}`
+  );
+  if (res.data == null) {
+    return { success: false, content: {} as PrecioDTO[], status: res.status };
+  }
+
+  const r = res.data;
+  return {
+    success: r.success,
+    content: r.result ?? ({} as PrecioDTO[]),
+    status: res.status,
+  };
+};
+
 async function uploadFile(files: File[]): Promise<APIResponse<UploadFile[]>> {
   const formData = new FormData();
   files.forEach((upldFile) => {
@@ -89,4 +125,6 @@ export default {
   getMedicamentos,
   getHistorialdePrecios,
   uploadFile,
+  getMedicamentoPorNombreComercial,
+  getPreciosPorManualDat,
 };

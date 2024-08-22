@@ -6,7 +6,7 @@ import type { DetailsMed, MedicamentoDTO } from "../../services/humano/types";
 import type { EnumDTO } from "../../services/system/types";
 // Components
 import Expediente from "../../components/Expediente.vue";
-import Medicamentos from "./components/Medicamentos.vue";
+import Medicamentos from "./components/ManualDat.vue";
 // Services
 import { useSystemStore } from "../../stores/system";
 import { usePrestadorStore } from "../../stores/prestadores";
@@ -73,7 +73,7 @@ const medDTO = reactive({
 // Validate
 const rules = {
   fecha: { required },
-  // farmacia: { nombre: { required } },
+  farmacia: { nombre: { required } },
   rows: { minValue: minValue(1) },
 };
 const v$ = useVuelidate(rules, medDTO);
@@ -119,6 +119,11 @@ const deleteProduct = () => {
   medDTO.rows = rowsMedic.value.length;
 };
 
+const onFarmacia = (farmacia: any) => {
+  const { value: prestadorDTO } = farmacia as { value: PrestadorDTO };
+  medDTO.farmacia = prestadorDTO;
+};
+
 // Expediente Zone
 const onExpediente = async (m: MedicamentoDTO) => {
   try {
@@ -132,7 +137,6 @@ const onExpediente = async (m: MedicamentoDTO) => {
     medDTO.fecha = fecha;
     medDTO.fechaString = fecha.toISOString();
     medDTO.expediente = m.expediente;
-    medDTO.farmacia = m.farmacia ?? baseFarmacia;
     medDTO.prestadoresId = m.prestadoresId;
     medDTO.estado = m.estado ?? baseEstado;
     if (m.medicamentos && m.medicamentos.length > 0) {
@@ -143,8 +147,19 @@ const onExpediente = async (m: MedicamentoDTO) => {
       });
       medDTO.rows = rowsMedic.value.length;
     }
+
+    const farmaciaObj = farmacias.value.find(
+      (f) => f.prestadorId === m.farmacia?.prestadorId
+    );
+    if (farmaciaObj) {
+      farmaciaSelected.value = farmaciaObj;
+      medDTO.farmacia = farmaciaObj; // Asigna el objeto de farmacia a medDTO.farmacia
+    } else {
+      farmaciaSelected.value = baseFarmacia;
+      medDTO.farmacia = baseFarmacia;
+    }
+
     await nextTick();
-    farmaciaSelected.value = m.farmacia;
   } catch (error) {
     console.log(error);
   }
@@ -223,12 +238,13 @@ const cleanData = () => {
       <Expediente @on-get-expediente="onExpediente" @on-clean-expediente="cleanData" :exp="medDTO.expediente" />
       <div v-if="medDTO.id > -1" class="grid grid-cols-6 gap-4">
         <div class="col-span-6 sm:col-span-3">
-          <label for="plan" class="labelInput">Farmacia</label>
-          <Select inputId="plan" v-model="farmaciaSelected" :options="farmacias" :loading="loading" optionLabel="nombre"
-            pt:root:class="w-full" placeholder="Seleccione una Farmacia" checkmark />
-          <!-- <p class="mt-0 text-sm text-red-600 dark:text-red-500"> -->
-          <!--   <span v-if="v$.farmacia.nombre.required.$invalid">Debe seleccionar una farmacia</span> -->
-          <!-- </p> -->
+          <label for="farmacia" class="labelInput">Farmacia</label>
+          <Select inputId="farmacia" v-model="medDTO.farmacia" :options="farmacias" :loading="loading"
+            optionLabel="nombre" pt:root:class="w-full" placeholder="Seleccione una Farmacia" checkmark
+            @change="onFarmacia" />
+          <p class="mt-0 text-sm text-red-600 dark:text-red-500">
+            <span v-if="v$.farmacia.nombre.required.$invalid">Debe seleccionar una farmacia</span>
+          </p>
         </div>
 
         <div class="col-span-6 sm:col-span-3">
@@ -247,7 +263,7 @@ const cleanData = () => {
               <DataTable ref="dt" :value="rowsMedic" dataKey="id" :filters="filters" :loading="loading">
                 <template #header>
                   <div class="flex flex-wrap gap-2 items-center justify-between">
-                    <Button label="Agregar Medicamentos" icon="pi pi-plus" @click="showDialog = true" />
+                    <Button label="Agregar Medicamentos" icon="pi pi-plus" @click="showDialog = true" severity="info" />
                     <div></div>
                     <IconField iconPosition="left">
                       <InputIcon class="pi pi-search"></InputIcon>
