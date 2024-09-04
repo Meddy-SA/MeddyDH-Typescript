@@ -5,8 +5,7 @@ import type { PrestadorDTO } from "../../services/prestadores/types";
 import type { DetailsMed, MedicamentoDTO } from "../../services/humano/types";
 import type { EnumDTO } from "../../services/system/types";
 // Components
-import Expediente from "../../components/Expediente.vue";
-import Medicamentos from "./components/ManualDat.vue";
+// import Medicamentos from "./components/ManualDat.vue";
 // Services
 import { useSystemStore } from "../../stores/system";
 import { usePrestadorStore } from "../../stores/prestadores";
