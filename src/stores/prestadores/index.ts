@@ -5,25 +5,25 @@ import { ref } from "vue";
 import type { PrestadorDTO } from "../../services/prestadores/types";
 import type { APIResponse } from "../../services/types";
 import { API } from "../../services";
-import { handleApiError } from "../../services/errorHandler.ts";
+import { handleApiError } from "../../services/seviceHandler.ts";
 
 export const usePrestadorStore = defineStore("prestador", () => {
-  const state = ref<PrestadorDTO[]>([]);
+  const prestadores = ref<PrestadorDTO[]>([]);
 
-  function init(data: PrestadorDTO[]): void {
+  function setPrestadores(data: PrestadorDTO[]): void {
     // Asignar a nombre la concatenación de apellido y nombre.
-    const updatedData = data.map(prestador => ({
+    const updatedData = data.map((prestador) => ({
       ...prestador,
-      nombre: `${prestador.apellido} ${prestador.nombre}` // Concatenamos apellido y nombre
+      nombre: `${prestador.apellido} ${prestador.nombre}`, // Concatenamos apellido y nombre
     }));
-    state.value = updatedData;
+    prestadores.value = updatedData;
   }
 
-  async function dispatchGetFarmacias(): Promise<APIResponse<string | null>> {
+  async function fetchFarmacias(): Promise<APIResponse<string | null>> {
     try {
       const { status, content } = await API.prestador.getFarmacias();
       if (status === 200) {
-        init(content);
+        setPrestadores(content);
         return { success: true, content: null };
       }
       throw new Error(`Unexpected status ${status}`);
@@ -33,7 +33,7 @@ export const usePrestadorStore = defineStore("prestador", () => {
   }
 
   return {
-    state,
-    dispatchGetFarmacias,
-  }
-})
+    prestadores,
+    fetchFarmacias,
+  };
+});

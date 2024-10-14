@@ -1,44 +1,40 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-
+import { ref, onMounted, computed } from "vue";
+import { storeToRefs } from "pinia";
+import { useDateFormat } from "@vueuse/core";
 import { useAlfabetaStore } from "../../../stores/alfabeta";
 
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Button from "primevue/button";
 import { FilterMatchMode } from "@primevue/core/api";
-import type { PrecioDTO } from "../../../services/alfabeta/types";
 
-const props = defineProps({ id: Number, product: String });
+const props = defineProps({
+  id: { type: Number, required: true },
+  product: { type: String, required: true },
+});
 const emit = defineEmits(["onSelect", "onClose"]);
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
-const alfabeta = useAlfabetaStore();
-const products = ref<PrecioDTO[]>([]);
+
+const alfabetaStore = useAlfabetaStore();
+const { precios } = storeToRefs(alfabetaStore);
+
+const products = computed(() => precios.value); // ref<PrecioDTO[]>([]);
 const loading = ref(false);
 
 onMounted(async () => {
   loading.value = true;
-  const { success } = await alfabeta.dispatchGetPrecioPorManualDat(props.id!);
-  if (success) {
-    products.value = alfabeta.precios;
-  }
+  await alfabetaStore.fetchPriceByManualDat(props.id!);
   loading.value = false;
 });
 
-const formatCurrency = (value: number) => {
-  return value.toLocaleString("en-US", { style: "currency", currency: "USD" });
-};
+const formatCurrency = (value: number) =>
+  value.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
-const formatDate = (value: string) => {
-  const fecha = new Date(value);
-  return fecha.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-};
+const formatDate = (value: string) =>
+  useDateFormat(new Date(value), "DD/MM/YYYY").value;
 
 const closeModal = () => {
   emit("onClose");

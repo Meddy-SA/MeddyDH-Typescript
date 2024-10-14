@@ -8,6 +8,7 @@ import {
   watch,
   type PropType,
 } from "vue";
+import { storeToRefs } from "pinia";
 import { useAlertStore } from "../../../stores/index.ts";
 import { useAlfabetaStore } from "../../../stores/alfabeta/index.ts";
 import { useVuelidate } from "@vuelidate/core";
@@ -24,15 +25,17 @@ import Dialog from "primevue/dialog";
 import type { DetailsMed } from "../../../services/humano/types.ts";
 import type { DrogaDTO } from "../../../services/alfabeta/types.ts";
 
-const emit = defineEmits(["onAdd", "onCancel"]);
 const props = defineProps({ row: Object as PropType<DetailsMed | null> });
+const emit = defineEmits(["onAdd", "onCancel"]);
+
 const alerts = useAlertStore();
-const alfabeta = useAlfabetaStore();
+const alfabetaStore = useAlfabetaStore();
+const { drogas } = storeToRefs(alfabetaStore);
 
 const showModalHistory = ref(false);
 const loading = ref(false);
 
-const labelGrabar = ref("Agregar");
+const labelGrabar = computed(() => (props.row ? "Modificar" : "Agregar"));
 const selectedDroga = ref<DrogaDTO>();
 const filteredDrogas = ref<DrogaDTO[]>([]);
 const medicamento = reactive({
@@ -49,46 +52,6 @@ const medicamento = reactive({
   comentario: "",
 });
 
-onMounted(async () => {
-  if (props.row && Object.keys(props.row).length !== 0) {
-    labelGrabar.value = "Modificar";
-    medicamento.drogaId = props.row.drogaId;
-    medicamento.indice = props.row.indice;
-    medicamento.presentacion = props.row.presentacion;
-    medicamento.nombre = props.row.nombre;
-    medicamento.precio = props.row.precio;
-    medicamento.cantidad = props.row.cantidad;
-    medicamento.reconoce = props.row.reconoce;
-    medicamento.subtotal = props.row.subtotal ?? 0;
-    medicamento.total = props.row.total;
-    medicamento.comentario = props.row.comentario;
-    medicamento.oldDrogaId = props.row.oldDrogaId ?? 0;
-    assignToDroga(medicamento as DetailsMed);
-  } else {
-    labelGrabar.value = "Agregar";
-  }
-
-  await nextTick();
-});
-
-const roundToTwo = (value: number) => {
-  return Number(value.toFixed(2));
-};
-
-const subtotal = computed(() => {
-  return roundToTwo(medicamento.precio * medicamento.cantidad);
-});
-
-const total = computed(() => {
-  const descuento = subtotal.value * (medicamento.reconoce / 100);
-  return roundToTwo(subtotal.value - descuento);
-});
-
-watch([subtotal, total], ([newSubtotal, newTotal]) => {
-  medicamento.subtotal = newSubtotal;
-  medicamento.total = newTotal;
-});
-
 const rules = {
   nombre: { required },
   cantidad: { required, minValue: minValue(1) },
@@ -96,18 +59,35 @@ const rules = {
 };
 const v$ = useVuelidate(rules, medicamento);
 
-interface Query {
-  query: string;
-}
+onMounted(async () => {
+  if (props.row && Object.keys(props.row).length !== 0) {
+    Object.assign(medicamento, props.row);
+    medicamento.subtotal = props.row.subtotal ?? 0;
+    medicamento.oldDrogaId = props.row.oldDrogaId ?? 0;
+    assignToDroga(medicamento as DetailsMed);
+  }
+  await nextTick();
+});
 
-const searchMedicamento = async (query: Query) => {
+const subtotal = computed(() =>
+  Number((medicamento.precio * medicamento.cantidad).toFixed(2))
+);
+const total = computed(() => {
+  const descuento = subtotal.value * (medicamento.reconoce / 100);
+  return Number((subtotal.value - descuento).toFixed(2));
+});
+
+watch([subtotal, total], ([newSubtotal, newTotal]) => {
+  medicamento.subtotal = newSubtotal;
+  medicamento.total = newTotal;
+});
+
+const searchMedicamento = async (event: { query: string }) => {
   loading.value = true;
   try {
-    const q = encodeURIComponent(query.query);
-    const { success } = await alfabeta.dispatchGetMedPorNomComercial(q);
-    if (success) {
-      filteredDrogas.value = alfabeta.drogas;
-    }
+    const q = encodeURIComponent(event.query);
+    await alfabetaStore.fetchMedByName(q);
+    filteredDrogas.value = drogas.value;
   } catch (error) {
     alerts.exception(error, 10);
   } finally {
@@ -115,16 +95,14 @@ const searchMedicamento = async (query: Query) => {
   }
 };
 
-const medicamentoSelected = (det: any) => {
-  if (det && typeof det === "object") {
-    Object.assign(medicamento, {
-      drogaId: det.value.id,
-      indice: "manual",
-      nombre: det.value.nombre,
-      presentacion: det.value.presentacion,
-      precio: det.value.precio,
-    });
-  }
+const medicamentoSelected = (event: { value: DrogaDTO }) => {
+  Object.assign(medicamento, {
+    drogaId: event.value.id,
+    indice: "manual",
+    nombre: event.value.nombre,
+    presentacion: event.value.presentacion,
+    precio: event.value.precio,
+  });
 };
 
 const assignToDroga = (med: DetailsMed) => {
@@ -141,16 +119,11 @@ const assignToDroga = (med: DetailsMed) => {
 
 const addMedicine = async () => {
   const isFormCorrect = await v$.value.$validate();
-  if (!isFormCorrect) {
-    return;
-  }
-
+  if (!isFormCorrect) return;
   emit("onAdd", medicamento);
 };
 
-const closeMedicine = () => {
-  emit("onCancel");
-};
+const closeMedicine = () => emit("onCancel");
 
 const changePrice = (value: number) => {
   alerts.toastAlert(value.toString(), "warn", 10, "Nuevo precio");

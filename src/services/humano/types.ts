@@ -36,3 +36,9 @@ export type DetailsMedicamento = {
   precio: number;
   tipo: string;
 };
+
+export type ExpedienteMotherDTO = {
+  id: number;
+  expediente: string;
+  children: MedicamentoDTO[];
+};

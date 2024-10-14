@@ -9,37 +9,37 @@ import type {
 } from "../../services/alfabeta/types";
 import type { APIResponse } from "../../services/types";
 import { API } from "../../services";
-import { handleApiError } from "../../services/errorHandler.ts";
+import { handleApiError } from "../../services/seviceHandler.ts";
 
 export const useAlfabetaStore = defineStore("alfabeta", () => {
-  const state = ref<Alfabeta[]>([]);
+  const alfabeta = ref<Alfabeta[]>([]);
   const drogas = ref<DrogaDTO[]>([]);
   const precios = ref<PrecioDTO[]>([]);
 
-  function initAlfabeta(data: Alfabeta[]): void {
-    state.value = data;
+  function setAlfabeta(data: Alfabeta[]): void {
+    alfabeta.value = data;
   }
 
-  function initDroga(data: DrogaDTO[]): void {
+  function setDroga(data: DrogaDTO[]): void {
     drogas.value = data;
   }
 
-  const initPrecios = (data: PrecioDTO[]): void => {
+  const setPrecios = (data: PrecioDTO[]): void => {
     precios.value = data;
   };
 
   function uploadFileToAlfabeta(files: UploadFile[]) {
-    state.value = state.value.map((alfabeta) => {
-      const file = files.find((file) => file.nombre === alfabeta.identificador);
-      return file?.cargado ? { ...alfabeta, fecha: file.fecha } : alfabeta;
+    alfabeta.value = alfabeta.value.map((med) => {
+      const file = files.find((file) => file.nombre === med.identificador);
+      return file?.cargado ? { ...med, fecha: file.fecha } : med;
     });
   }
 
-  async function dispatchGetAlfabeta(): Promise<APIResponse<string | null>> {
+  async function fetchUpdatedAlfabeta(): Promise<APIResponse<string | null>> {
     try {
-      const { status, content } = await API.alfabeta.getAlfabeta();
+      const { status, content } = await API.alfabeta.getActualizaAlfabeta();
       if (status === 200) {
-        initAlfabeta(content);
+        setAlfabeta(content);
         return { success: true, content: null };
       }
       throw new Error(`Unexpected status ${status}`);
@@ -52,7 +52,9 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     files: File[]
   ): Promise<APIResponse<string | null>> {
     try {
-      const { status, content } = await API.alfabeta.uploadFile(files);
+      const { status, content } = await API.alfabeta.postSubirArchivosAlfabeta(
+        files
+      );
       if (status === 200) {
         uploadFileToAlfabeta(content);
         return { success: true, content: null };
@@ -64,17 +66,17 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     }
   }
 
-  async function dispatchFilterAlfabeta(
+  async function fetchSearchMedicineAlfabeta(
     filter: string,
     indice: string
   ): Promise<APIResponse<string | null>> {
     try {
-      const { status, content } = await API.alfabeta.getMedicamentos(
+      const { status, content } = await API.alfabeta.getBuscarMedicamentos(
         filter,
         indice
       );
       if (status === 200) {
-        initDroga(content);
+        setDroga(content);
         return { success: true, content: null };
       }
       throw new Error(`Unexpected status ${status}`);
@@ -83,17 +85,17 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     }
   }
 
-  async function dispatchGetHistorial(
+  async function fetchPriceHistory(
     filter: number,
     indice: string
   ): Promise<APIResponse<string | null>> {
     try {
-      const { status, content } = await API.alfabeta.getHistorialdePrecios(
+      const { status, content } = await API.alfabeta.getHistorialPrecios(
         filter,
         indice
       );
       if (status === 200) {
-        initDroga(content);
+        setDroga(content);
         return { success: true, content: null };
       }
       throw new Error(`Unexpected status ${status}`);
@@ -102,14 +104,14 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     }
   }
 
-  const dispatchGetMedPorNomComercial = async (
+  const fetchMedByName = async (
     filter: string
   ): Promise<APIResponse<string | null>> => {
     try {
       const { status, content, success } =
-        await API.alfabeta.getMedicamentoPorNombreComercial(filter);
+        await API.alfabeta.getBuscarPorNombreComercial(filter);
       if (status === 200) {
-        initDroga(content);
+        setDroga(content);
         return { success: success, content: null };
       }
       throw new Error(`Unexpected status ${status}`);
@@ -118,14 +120,14 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     }
   };
 
-  const dispatchGetPrecioPorManualDat = async (
+  const fetchPriceByManualDat = async (
     id: number
   ): Promise<APIResponse<string | null>> => {
     try {
       const { status, content, success } =
-        await API.alfabeta.getPreciosPorManualDat(id);
+        await API.alfabeta.getPrecioPorManualDat(id);
       if (status === 200) {
-        initPrecios(content);
+        setPrecios(content);
         return { success: success, content: null };
       }
       throw new Error(`Unexpected status ${status}`);
@@ -135,17 +137,14 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
   };
 
   return {
-    state,
+    alfabeta,
     drogas,
     precios,
-    uploadFileToAlfabeta,
-    initAlfabeta,
-    initDroga,
-    dispatchGetAlfabeta,
-    dispatchFilterAlfabeta,
+    fetchUpdatedAlfabeta,
     dispatchUploadAlfabeta,
-    dispatchGetHistorial,
-    dispatchGetMedPorNomComercial,
-    dispatchGetPrecioPorManualDat,
+    fetchSearchMedicineAlfabeta,
+    fetchPriceHistory,
+    fetchMedByName,
+    fetchPriceByManualDat,
   };
 });

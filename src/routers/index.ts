@@ -26,10 +26,9 @@ const router = createRouter({
 router.beforeEach(
   async (
     to: RouteLocationNormalizedGeneric,
-    from: RouteLocationNormalizedGeneric,
+    _: RouteLocationNormalizedGeneric,
     next: NavigationGuardNext
   ): Promise<void> => {
-    console.log(`${from}`);
     if (to.matched.some((r) => r.meta.auth)) {
       const token = localStorage.getItem("token");
       if (!token) {

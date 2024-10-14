@@ -24,11 +24,13 @@ import ListaPrecio from "../components/ListaPrecio.vue";
 import Dialog from "primevue/dialog";
 import type { DetailsMed } from "../../../services/humano/types.ts";
 import type { DrogaDTO } from "../../../services/alfabeta/types.ts";
+import { storeToRefs } from "pinia";
 
 const emit = defineEmits(["onAdd", "onCancel"]);
 const props = defineProps({ row: Object as PropType<DetailsMed | null> });
 const alerts = useAlertStore();
-const alfabeta = useAlfabetaStore();
+const alfabetaStore = useAlfabetaStore();
+const { drogas } = storeToRefs(alfabetaStore);
 
 const showModalHistory = ref(false);
 const loading = ref(false);
@@ -111,9 +113,12 @@ const searchMedicamento = async (query: Query) => {
   loading.value = true;
   try {
     const q = encodeURIComponent(query.query);
-    const { success } = await alfabeta.dispatchFilterAlfabeta(q, indice.value);
+    const { success } = await alfabetaStore.fetchSearchMedicineAlfabeta(
+      q,
+      indice.value
+    );
     if (success) {
-      filteredDrogas.value = alfabeta.drogas;
+      filteredDrogas.value = drogas.value;
     }
   } catch (error) {
     alerts.exception(error, 10);

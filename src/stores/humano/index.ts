@@ -1,80 +1,95 @@
 // stores/humano/index.ts
 
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import type { MedicamentoDTO } from "../../services/humano/types";
 import type { APIResponse } from "../../services/types";
 import { API } from "../../services";
-import { handleApiError } from "../../services/errorHandler.ts";
+import { handleApiError } from "../../services/seviceHandler.ts";
 
 export const useHumanoStore = defineStore("humano", () => {
-  const state = ref<MedicamentoDTO>();
+  const medicamento = ref<MedicamentoDTO | null>(null);
   const expedientes = ref<MedicamentoDTO[]>([]);
+  const isLoading = ref(false);
 
-  function initHumano(data: MedicamentoDTO): void {
-    state.value = data;
+  const hasExpedientes = computed(() => expedientes.value.length > 0);
+
+  function setCurrentMedicamento(data: MedicamentoDTO | null): void {
+    medicamento.value = data;
   }
 
-  function initExpedientes(data: MedicamentoDTO[]): void {
+  function setExpedientes(data: MedicamentoDTO[]): void {
     expedientes.value = data;
   }
 
-  async function dispatchGetExpediente(
+  async function fetchExpediente(
     exp: string
   ): Promise<APIResponse<string | null>> {
+    isLoading.value = true;
     try {
       const { status, content } = await API.humano.getExpediente(exp);
       if (status === 200) {
-        initHumano(content);
+        setCurrentMedicamento(content);
         return { success: true, content: null };
       }
+
       throw new Error(`Unexpected status ${status}`);
     } catch (error) {
       return handleApiError(error);
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  const dispatchGetExpedientes = async (
+  async function fetchExpedientes(
     desde: string,
     hasta: string
-  ): Promise<APIResponse<string | null>> => {
+  ): Promise<APIResponse<string | null>> {
+    isLoading.value = true;
     try {
       const { status, content } = await API.humano.getListaExpedientes(
         desde,
         hasta
       );
       if (status === 200) {
-        initExpedientes(content);
+        setExpedientes(content);
         return { success: true, content: null };
       }
       throw new Error(`Unexpected status ${status}`);
     } catch (error) {
       return handleApiError(error);
+    } finally {
+      isLoading.value = false;
     }
-  };
+  }
 
-  const dispatchPostExpediente = async (
+  async function createExpediente(
     medicamento: MedicamentoDTO
-  ): Promise<APIResponse<string | null>> => {
+  ): Promise<APIResponse<string | null>> {
+    isLoading.value = true;
     try {
       const { status, content, success } = await API.humano.postExpediente(
         medicamento
       );
       if (status === 200) {
-        initHumano(content);
-        return { success: success, content: null };
+        setCurrentMedicamento(content);
+        return { success, content: null };
       }
       throw new Error(`Unexpected status ${status}`);
     } catch (error) {
       return handleApiError(error);
+    } finally {
+      isLoading.value = false;
     }
-  };
+  }
 
   return {
-    state,
+    medicamento,
     expedientes,
-    dispatchGetExpediente,
-    dispatchGetExpedientes,
-    dispatchPostExpediente,
+    isLoading,
+    hasExpedientes,
+    fetchExpediente,
+    fetchExpedientes,
+    createExpediente,
   };
 });

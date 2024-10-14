@@ -17,9 +17,12 @@ import { useHumanoStore } from "../../stores/humano";
 import type { MedicamentoDTO } from "../../services/humano/types";
 
 import RecetaPDF from "./components/Pdf.vue";
+import { storeToRefs } from "pinia";
 
-const system = useSystemStore();
-const humano = useHumanoStore();
+const systemStore = useSystemStore();
+const humanoStore = useHumanoStore();
+const { meses } = storeToRefs(systemStore);
+const { expedientes } = storeToRefs(humanoStore);
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
@@ -34,14 +37,10 @@ const showPDF = ref(false);
 const dataPdf = ref<MedicamentoDTO>();
 
 onMounted(async () => {
-  try {
-    const r = await system.dispatchGetMesActual();
-    if (r) {
-      desde.value = new Date(system.meses?.startDate!);
-      hasta.value = new Date(system.meses?.endDate!);
-    }
-  } catch (e) {
-    console.log(e);
+  const { success } = await systemStore.fetchMesActual();
+  if (success) {
+    desde.value = new Date(meses.value?.startDate!);
+    hasta.value = new Date(meses.value?.endDate!);
   }
 });
 
@@ -50,12 +49,12 @@ const filtrarLista = async () => {
   try {
     const formatDesde = desde.value?.toISOString().split("T")[0] ?? "";
     const formatHasta = hasta.value?.toISOString().split("T")[0] ?? "";
-    const { success } = await humano.dispatchGetExpedientes(
+    const { success } = await humanoStore.fetchExpedientes(
       formatDesde,
       formatHasta
     );
     if (success) {
-      rows.value = humano.expedientes;
+      rows.value = expedientes.value;
     }
   } catch (e) {
     console.log(e);

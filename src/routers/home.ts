@@ -1,6 +1,6 @@
 import Layout from "../components/layouts/Default.vue";
 import { Home } from "../views/index.ts";
-import { Medicamentos, Listado } from "../views/humano/index.ts";
+import { Medicamentos, Listado, Expediente } from "../views/humano/index.ts";
 import { type RouteRecordRaw } from "vue-router";
 
 const meta = { auth: true };
@@ -20,6 +20,11 @@ const route: RouteRecordRaw = {
       path: "listado",
       meta: { ...meta, breadcrumb: "Listado de Medicamentos" },
       component: Listado,
+    },
+    {
+      path: "expediente",
+      meta: { ...meta, breadcrumb: "Gestión de Expediente" },
+      component: Expediente,
     },
   ],
 };

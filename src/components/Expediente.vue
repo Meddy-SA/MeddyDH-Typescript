@@ -1,26 +1,33 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, type PropType } from "vue";
 import { useAlertStore } from "../stores";
 import { useHumanoStore } from "../stores/humano";
+import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import InputGroup from "primevue/inputgroup";
 import InputMask from "primevue/inputmask";
 
 const emit = defineEmits(["onGetExpediente", "onCleanExpediente"]);
+const props = defineProps({
+  masterExpediente: Boolean as PropType<boolean | false>,
+});
+
+console.log(props);
+
 const alerts = useAlertStore();
-const humano = useHumanoStore();
-const loading = ref(false);
-const expediente = ref(); // Ref to inputmask
+const humanoStore = useHumanoStore();
+const { medicamento, isLoading } = storeToRefs(humanoStore);
+
+const expediente = ref<InstanceType<typeof InputMask>>(); // Ref to inputmask
 const expedienteCargado = ref(false);
 const iconButton = ref("pi pi-check");
 const expedienteNumber = ref("");
 
 onMounted(() => {
-  expediente.value.$el.focus();
+  expediente.value?.$el.focus();
 });
 
 const onClickButton = async () => {
-  loading.value = true;
   if (expedienteCargado.value) {
     cleanExpediente();
   } else {
@@ -30,21 +37,15 @@ const onClickButton = async () => {
 
 const getDesarrolloHumano = async () => {
   if (expedienteNumber.value === "") {
-    loading.value = false;
     return;
   }
-  loading.value = true;
   try {
-    const { success } = await humano.dispatchGetExpediente(
-      expedienteNumber.value
-    );
-    if (success) {
+    const response = await humanoStore.fetchExpediente(expedienteNumber.value);
+    if (response.success) {
       iconButton.value = "pi pi-refresh";
       expedienteCargado.value = true;
-      humano.state!.id = humano.state?.id === -1 ? 0 : humano.state!.id;
-      humano.state!.expediente =
-        humano.state?.expediente ?? expedienteNumber.value;
-      emit("onGetExpediente", humano.state);
+
+      emit("onGetExpediente", medicamento);
     } else {
       alerts.toastAlert(
         "Error al recuperar expediente",
@@ -55,8 +56,6 @@ const getDesarrolloHumano = async () => {
     }
   } catch (error) {
     alerts.exception(error, 10);
-  } finally {
-    loading.value = false;
   }
 };
 
@@ -65,8 +64,7 @@ const cleanExpediente = () => {
   expedienteCargado.value = false;
   expedienteNumber.value = "";
   emit("onCleanExpediente");
-  loading.value = false;
-  expediente.value.$el.focus();
+  expediente.value?.$el.focus();
 };
 </script>
 
@@ -80,7 +78,7 @@ const cleanExpediente = () => {
             @keydown.enter="getDesarrolloHumano" :readonly="expedienteCargado" mask="999-999999-9999"
             slot-char="000-000000-0000" placeholder="Número de Expediente" pt:root:class="w-full" />
 
-          <Button :icon="iconButton" severity="contrast" outlined @click="onClickButton" :loading="loading" />
+          <Button :icon="iconButton" severity="contrast" outlined @click="onClickButton" :loading="isLoading" />
         </InputGroup>
       </div>
     </div>

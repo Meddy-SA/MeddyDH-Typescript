@@ -16,6 +16,7 @@ import { FilterMatchMode } from "@primevue/core/api";
 import { useVuelidate } from "@vuelidate/core";
 import { required, minValue } from "@vuelidate/validators";
 import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
 // Tools
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -33,20 +34,22 @@ import Dialog from "primevue/dialog";
 
 // Constant for Services
 const alert = useAlertStore();
-const system = useSystemStore();
-const prestador = usePrestadorStore();
-const expediente = useHumanoStore();
+const systemStore = useSystemStore();
+const prestadorStore = usePrestadorStore();
+const humanoStore = useHumanoStore();
+const { hoy } = storeToRefs(systemStore);
+const { isLoading } = storeToRefs(humanoStore);
+const { prestadores } = storeToRefs(prestadorStore);
+
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
 // Constant of system
-const loading = ref(false);
 const minDate = ref(new Date());
 const showDialog = ref(false);
 const deleteProductDialog = ref(false);
 const farmaciaSelected = ref<PrestadorDTO>();
-const farmacias = ref<PrestadorDTO[]>([]);
 const rowsMedic = ref<DetailsMed[]>([]);
 const product = ref<DetailsMed | null>();
 
@@ -80,14 +83,11 @@ const v$ = useVuelidate(rules, medDTO);
 
 // Vue Method
 onMounted(async () => {
-  const r = await system.dispatchGetFecha();
-  if (r.success) {
-    minDate.value = new Date();
-  }
-  const { success } = await prestador.dispatchGetFarmacias();
-  if (success) {
-    farmacias.value = prestador.state;
-  }
+  isLoading.value = true;
+  await systemStore.fetchFecha();
+  minDate.value = hoy.value as Date;
+  await prestadorStore.fetchFarmacias();
+  isLoading.value = false;
 });
 
 const formatCurrency = (value: number) => {
@@ -127,37 +127,34 @@ const onFarmacia = (farmacia: any) => {
 // Expediente Zone
 const onExpediente = async (m: MedicamentoDTO) => {
   try {
-    medDTO.id = m.id;
-    let fechaString = m.fecha.toString().split("T")[0];
+    const fechaString = m.fecha.toString().split("T")[0];
     let fecha = new Date(fechaString + "T00:00:00");
     if (isNaN(fecha.getTime()) || fechaString === "0001-01-01") {
-      fecha = minDate.value; // Usa minDate si la fecha es inválida o es "0001-01-01"
+      fecha = minDate.value;
     }
+    Object.assign(medDTO, {
+      id: m.id,
+      fechaString: fecha.toISOString(),
+      fecha: fecha,
+      expediente: m.expediente,
+      prestadoresId: m.prestadoresId,
+      estado: m.estado ?? baseEstado,
+    });
 
-    medDTO.fecha = fecha;
-    medDTO.fechaString = fecha.toISOString();
-    medDTO.expediente = m.expediente;
-    medDTO.prestadoresId = m.prestadoresId;
-    medDTO.estado = m.estado ?? baseEstado;
     if (m.medicamentos && m.medicamentos.length > 0) {
-      rowsMedic.value = [...m.medicamentos];
-      rowsMedic.value.forEach((row) => {
-        const sub = row.precio * row.cantidad;
-        row.subtotal = Number(sub.toFixed(2));
-      });
+      rowsMedic.value = m.medicamentos.map((med) => ({
+        ...med,
+        subtotal: Number((med.precio * med.cantidad).toFixed(2)),
+      }));
       medDTO.rows = rowsMedic.value.length;
     }
 
-    const farmaciaObj = farmacias.value.find(
-      (f) => f.prestadorId === m.farmacia?.prestadorId
-    );
-    if (farmaciaObj) {
-      farmaciaSelected.value = farmaciaObj;
-      medDTO.farmacia = farmaciaObj; // Asigna el objeto de farmacia a medDTO.farmacia
-    } else {
-      farmaciaSelected.value = baseFarmacia;
-      medDTO.farmacia = baseFarmacia;
-    }
+    farmaciaSelected.value =
+      prestadores.value.find(
+        (f: PrestadorDTO) => f.prestadorId === m.farmacia?.prestadorId
+      ) || baseFarmacia;
+
+    medDTO.farmacia = farmaciaSelected.value as PrestadorDTO;
 
     await nextTick();
   } catch (error) {
@@ -194,17 +191,17 @@ const onCloseMedicamento = () => {
 
 // Zona de Guardado
 const saveMedicamento = async () => {
-  loading.value = true;
   try {
     const isFormCorrect = await v$.value.$validate();
     if (!isFormCorrect) {
-      loading.value = false;
       return;
     }
+
     medDTO.medicamentos = rowsMedic.value;
     medDTO.farmacia = farmaciaSelected.value ?? baseFarmacia;
     medDTO.prestadoresId = farmaciaSelected.value?.prestadorId ?? 0;
-    const { success } = await expediente.dispatchPostExpediente(medDTO);
+
+    const { success } = await humanoStore.createExpediente(medDTO);
     if (success) {
       alert.toastAlert(`Se grabo correctamente`, "success", 10, "Genial!");
       cleanData();
@@ -213,8 +210,6 @@ const saveMedicamento = async () => {
     }
   } catch (error) {
     alert.exception(error, 10);
-  } finally {
-    loading.value = false;
   }
 };
 
@@ -239,7 +234,7 @@ const cleanData = () => {
       <div v-if="medDTO.id > -1" class="grid grid-cols-6 gap-4">
         <div class="col-span-6 sm:col-span-3">
           <label for="farmacia" class="labelInput">Farmacia</label>
-          <Select inputId="farmacia" v-model="farmaciaSelected" :options="farmacias" :loading="loading"
+          <Select inputId="farmacia" v-model="farmaciaSelected" :options="prestadores" :loading="isLoading"
             optionLabel="nombre" pt:root:class="w-full" placeholder="Seleccione una Farmacia" checkmark
             @change="onFarmacia" />
           <p class="mt-0 text-sm text-red-600 dark:text-red-500">
@@ -260,7 +255,7 @@ const cleanData = () => {
           <Card>
             <template #title>Medicamentos</template>
             <template #content>
-              <DataTable ref="dt" :value="rowsMedic" dataKey="id" :filters="filters" :loading="loading">
+              <DataTable ref="dt" :value="rowsMedic" dataKey="id" :filters="filters" :loading="isLoading">
                 <template #header>
                   <div class="flex flex-wrap gap-2 items-center justify-between">
                     <Button label="Agregar Medicamentos" icon="pi pi-plus" @click="showDialog = true" severity="info" />
@@ -315,7 +310,7 @@ const cleanData = () => {
         </div>
 
         <div class="col-span-6 flex justify-center p-2">
-          <Button label="Guardar cambios" icon="pi pi-save" severity="success" :loading="loading"
+          <Button label="Guardar cambios" icon="pi pi-save" severity="success" :loading="isLoading"
             @click="saveMedicamento" />
         </div>
       </div>

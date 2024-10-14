@@ -1,22 +1,24 @@
-import http from '../api.ts';
-import type { APIResponse, ResponseDTO } from '../types.ts';
-import type { PrestadorDTO } from './types.ts';
+import http from "../api.ts";
+import type { APIResponse, ResponseDTO } from "../types.ts";
+import type { PrestadorDTO } from "./types.ts";
+import { handleServiceError } from "../seviceHandler.ts";
 
-const getFarmacias = async (): Promise<APIResponse<PrestadorDTO[]>> => {
-  const res = await http.get<ResponseDTO<PrestadorDTO[]>>(`prestadores/farmacias`);
-  if (res.data === null) {
-    return { success: false, content: {} as PrestadorDTO[], status: res.status };
-  }
+export function prestadoresAPIController() {
+  const getFarmacias = async (): Promise<APIResponse<PrestadorDTO[]>> => {
+    try {
+      const response = await http.get<ResponseDTO<PrestadorDTO[]>>(
+        `prestadores/farmacias`
+      );
+      return {
+        success: response.data?.success ?? false,
+        content: response.data?.result ?? [],
+        status: response.status,
+        error: response.data?.error,
+      };
+    } catch (error: unknown) {
+      return handleServiceError<PrestadorDTO[]>(error, []);
+    }
+  };
 
-  const r = res.data;
-
-  return {
-    success: r.success,
-    content: r.result ?? {} as PrestadorDTO[],
-    status: res.status
-  }
-}
-
-export default {
-  getFarmacias,
+  return { getFarmacias };
 }
