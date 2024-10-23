@@ -1,68 +1,74 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue";
 
-import { useAuthStore } from '../../../stores/index.ts'
-import Menu from 'primevue/menu';
-import Avatar from 'primevue/avatar';
-import Badge from 'primevue/badge';
-import SvgLogo from '@/assets/svgs/meddylogo.svg?component'
-import SvgLogoText from '@/assets/svgs/meddysa.svg?component'
-import type { MenuItem } from 'primevue/menuitem';
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../../../stores/index.ts";
+import Menu from "primevue/menu";
+import Avatar from "primevue/avatar";
+import Badge from "primevue/badge";
+import SvgLogo from "@/assets/svgs/meddylogo.svg?component";
+import SvgLogoText from "@/assets/svgs/meddysa.svg?component";
+import type { MenuItem } from "primevue/menuitem";
 
-const authStore = useAuthStore()
-const menuUser = ref()
+const authStore = useAuthStore();
+const menuUser = ref();
+const router = useRouter();
 
 const showMenuUser = (ev: Event) => {
-  menuUser.value.toggle(ev)
-}
+  menuUser.value.toggle(ev);
+};
 
 const itemsUser = ref<MenuItem[]>([
   {
-    separator: true
+    separator: true,
   },
   {
-    label: 'Desarrollo Humano',
+    label: "Desarrollo Humano",
     items: [
       {
-        label: 'Nuevo',
-        icon: 'pi pi-plus',
-        shortcut: '⌘+N'
+        label: "Nuevo",
+        icon: "pi pi-plus",
+        shortcut: "⌘+N",
       },
       {
-        label: 'Buscar',
-        icon: 'pi pi-search',
-        shortcut: '⌘+S'
-      }
-    ]
+        label: "Buscar",
+        icon: "pi pi-search",
+        shortcut: "⌘+S",
+      },
+    ],
   },
   {
-    label: 'Perfil',
+    label: "Perfil",
     items: [
       {
-        label: 'Opciones',
-        icon: 'pi pi-cog',
-        shortcut: '⌘+O'
-      },
-      {
-        label: 'Mensajes',
-        icon: 'pi pi-inbox',
-        badge: 2
-      },
-      {
-        label: 'Cerrar Sesión',
-        icon: 'pi pi-sign-out',
-        shortcut: '⌘+Q',
+        label: "Opciones",
+        icon: "pi pi-cog",
+        shortcut: "⌘+O",
         command: () => {
-          authStore.logout()
-        }
-      }
-    ]
+          router.push("/auth/profile");
+        },
+      },
+      {
+        label: "Cambiar Contrasena",
+        icon: "pi pi-key",
+        command: () => {
+          router.push("/auth/change-password");
+        },
+      },
+      {
+        label: "Cerrar Sesión",
+        icon: "pi pi-sign-out",
+        shortcut: "⌘+Q",
+        command: () => {
+          authStore.logout();
+        },
+      },
+    ],
   },
   {
-    separator: true
-  }
-])
-
+    separator: true,
+  },
+]);
 </script>
 
 <template>

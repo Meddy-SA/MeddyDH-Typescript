@@ -74,32 +74,44 @@ const uploadFiles = async () => {
   }
 };
 
-const onAddFiles = () => {
-  if (fileInput.value.files.length > 0) {
-    let totalSize = 0;
-    for (let i = 0; i < fileInput.value.files.length; i++) {
-      const f: File = fileInput.value.files[i];
-      totalSize += f.size;
-      // Validar el tamaño total de los archivos
-      if (totalSize > 30 * 1024 * 1024) {
-        // 30MB
-        alertStore.toastAlert(
-          `La suma del tamaño de los archivos excede el límite de 30MB.`,
-          "warn",
-          5,
-          "Tamaño de archivo excedido"
-        );
-      } else {
-        const newFile: UploadFile = {
-          nombre: f.name,
-          contenido: f,
-          cargado: false,
-          fecha: fechaFormateada(new Date().toString()),
-          observacion: formatSize(f.size),
-          ordenOriginal: filesToUpload.value.length,
-        };
-        filesToUpload.value.push(newFile);
-      }
+const onAddFiles = (event: Event) => {
+  const files = (event.target as HTMLInputElement).files;
+  if (files) {
+    processFiles(Array.from(files));
+  }
+};
+
+const onDropFiles = (event: DragEvent) => {
+  const droppedFiles = event.dataTransfer?.files;
+  if (droppedFiles) {
+    processFiles(Array.from(droppedFiles));
+  }
+};
+
+const processFiles = (files: File[]) => {
+  let totalSize = 0;
+  for (const f of files) {
+    totalSize += f.size;
+    // Validar el tamaño total de los archivos
+    if (totalSize > 30 * 1024 * 1024) {
+      // 30MB
+      alertStore.toastAlert(
+        `La suma del tamaño de los archivos excede el límite de 30MB.`,
+        "warn",
+        5,
+        "Tamaño de archivo excedido"
+      );
+      break;
+    } else {
+      const newFile: UploadFile = {
+        nombre: f.name,
+        contenido: f,
+        cargado: false,
+        fecha: fechaFormateada(new Date().toString()),
+        observacion: formatSize(f.size),
+        ordenOriginal: filesToUpload.value.length,
+      };
+      filesToUpload.value.push(newFile);
     }
   }
 };
@@ -135,7 +147,8 @@ const formatSize = (bytes: number) => {
       <BlockUI :blocked="loading">
         <div class="grid grid-cols-6 grid-rows-2 gap-4">
           <div class="col-span-6 sm:col-span-3">
-            <div v-if="filesToUpload.length === 0" class="flex items-center justify-center w-full">
+            <div v-if="filesToUpload.length === 0" class="flex items-center justify-center w-full" @dragover.prevent
+              @drop.prevent="onDropFiles">
               <label for="dropzone-file"
                 class="flex flex-col items-center justify-center w-full h-52 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
@@ -152,7 +165,7 @@ const formatSize = (bytes: number) => {
                     TXT, DAT
                   </p>
                 </div>
-                <input ref="fileInput" id="dropzone-file" @change="onAddFiles()" type="file" class="hidden"
+                <input ref="fileInput" id="dropzone-file" @change="onAddFiles" type="file" class="hidden"
                   accept=".txt,.dat" />
               </label>
             </div>

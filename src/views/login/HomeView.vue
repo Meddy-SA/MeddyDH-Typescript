@@ -1,53 +1,50 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import Image from 'primevue/image'
-import Skeleton from 'primevue/skeleton'
-import Logo from '@/assets/imgs/logo-full.png'
-import { required } from "@vuelidate/validators"
+import { ref, reactive } from 'vue';
+import Image from 'primevue/image';
+import Skeleton from 'primevue/skeleton';
+import Logo from '@/assets/imgs/logo-full.png';
+import { required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
-import { useAuthStore } from '../../stores/index.ts'
-import type { LoginDto } from '../../services/authentication/types.ts'
+import { useAuthStore } from '../../stores/index.ts';
+import type { LoginDto } from '../../services/authentication/types.ts';
 
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 
-const submitted = ref(false)
-const loading = ref(false)
-const passwordInput = ref()
-const passwordVisibility = ref({ icon: 'show', type: 'password' })
+const submitted = ref(false);
+const loading = ref(false);
+const passwordInput = ref();
+const passwordVisibility = ref({ icon: 'show', type: 'password' });
 
-const rules = { userName: { required }, password: { required } }
-const state = reactive({ userName: '', password: '' })
+const rules = { userName: { required }, password: { required } };
+const state = reactive({ userName: '', password: '' });
 
-const v$ = useVuelidate(rules, state)
+const v$ = useVuelidate(rules, state);
 
 const togglePasswordVisibility = () => {
   if (passwordVisibility.value.icon === 'show') {
-    passwordVisibility.value = { icon: 'hide', type: 'text' }
+    passwordVisibility.value = { icon: 'hide', type: 'text' };
   }
   else {
-    passwordVisibility.value = { icon: 'show', type: 'password' }
+    passwordVisibility.value = { icon: 'show', type: 'password' };
   }
 }
 
 const handleLogin = async (isFormValid: boolean) => {
-  submitted.value = true
+  submitted.value = true;
 
-  if (!isFormValid) {
-    return
-  }
-  loading.value = true
+  if (!isFormValid) return;
+  loading.value = true;
 
   const credentials: LoginDto = {
     user: state.userName,
     password: state.password
-  }
+  };
 
   const result = await authStore.login(credentials);
   if (!result) {
-    loading.value = false
+    loading.value = false;
   }
 }
-
 </script>
 
 <template>

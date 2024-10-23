@@ -2,7 +2,11 @@
 import { ref, reactive, onMounted, computed, nextTick } from "vue";
 // Types
 import type { PrestadorDTO } from "../../services/prestadores/types";
-import type { DetailsMed, MedicamentoDTO } from "../../services/humano/types";
+import type {
+  DetailsMed,
+  ExpedienteMotherDTO,
+  MedicamentoDTO,
+} from "../../services/humano/types";
 import type { EnumDTO } from "../../services/system/types";
 // Components
 import Expediente from "../../components/Expediente.vue";
@@ -125,8 +129,12 @@ const onFarmacia = (farmacia: any) => {
 };
 
 // Expediente Zone
-const onExpediente = async (m: MedicamentoDTO) => {
+const onExpediente = async (m: MedicamentoDTO | ExpedienteMotherDTO) => {
   try {
+    if ("children" in m) {
+      console.log("Recibido ExpedienteMotherDTO", m);
+      return;
+    }
     const fechaString = m.fecha.toString().split("T")[0];
     let fecha = new Date(fechaString + "T00:00:00");
     if (isNaN(fecha.getTime()) || fechaString === "0001-01-01") {
@@ -166,18 +174,25 @@ const onExpediente = async (m: MedicamentoDTO) => {
 const onAddMedicamento = (medicamento: DetailsMed) => {
   if (!medicamento) return;
 
-  // Buscar si el medicamento ya existe en rowsMedic por id o algún criterio único
-  const existingIndex = rowsMedic.value.findIndex(
-    (med: DetailsMed) => med.id === medicamento.id
-  );
+  const isNewMedicamento = medicamento.id === undefined;
 
-  if (existingIndex > -1) {
-    // Si ya existe el medicamento, actualizarlo si es necesario
-    const existingMed = rowsMedic.value[existingIndex];
-    rowsMedic.value[existingIndex] = { ...existingMed };
-  } else {
-    // Si no existe, agregarlo a la lista
+  if (isNewMedicamento) {
+    // Si es un medicamento nuevo, simplemente agregarlo a la lista
     rowsMedic.value = [...rowsMedic.value, medicamento];
+  } else {
+    // Buscar si el medicamento ya existe en rowsMedic por id o algún criterio único
+    const existingIndex = rowsMedic.value.findIndex(
+      (med: DetailsMed) => med.id === medicamento.id
+    );
+
+    if (existingIndex > -1) {
+      // Si ya existe el medicamento, actualizarlo
+      rowsMedic.value[existingIndex] = { ...medicamento };
+    } else {
+      // Si no existe pero tiene un id (es decir, no es nuevo pero no está en la lista),
+      // agregarlo a la lista
+      rowsMedic.value = [...rowsMedic.value, medicamento];
+    }
   }
 
   onCloseMedicamento();

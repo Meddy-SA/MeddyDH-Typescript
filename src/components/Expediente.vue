@@ -1,52 +1,78 @@
 <script setup lang="ts">
-import { onMounted, ref, type PropType } from "vue";
+import { onMounted, ref, computed, nextTick } from "vue";
 import { useAlertStore } from "../stores";
 import { useHumanoStore } from "../stores/humano";
 import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import InputGroup from "primevue/inputgroup";
 import InputMask from "primevue/inputmask";
+import type {
+  ExpedienteMotherDTO,
+  MedicamentoDTO,
+} from "../services/humano/types";
 
-const emit = defineEmits(["onGetExpediente", "onCleanExpediente"]);
-const props = defineProps({
-  masterExpediente: Boolean as PropType<boolean | false>,
+interface Props {
+  masterExpediente?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  masterExpediente: false,
 });
 
-console.log(props);
+const emit = defineEmits<{
+  (e: "onGetExpediente", value: MedicamentoDTO | ExpedienteMotherDTO): void;
+  (e: "onCleanExpediente"): void;
+}>();
 
 const alerts = useAlertStore();
 const humanoStore = useHumanoStore();
-const { medicamento, isLoading } = storeToRefs(humanoStore);
+const { medicamento, isLoading, expMother } = storeToRefs(humanoStore);
 
-const expediente = ref<InstanceType<typeof InputMask>>(); // Ref to inputmask
+const expediente = ref<InstanceType<typeof InputMask> | null>(null); // Ref to inputmask
 const expedienteCargado = ref(false);
-const iconButton = ref("pi pi-check");
 const expedienteNumber = ref("");
+
+const iconButton = computed(() =>
+  expedienteCargado.value ? "pi pi-refresh" : "pi pi-check"
+);
 
 onMounted(() => {
   expediente.value?.$el.focus();
 });
 
 const onClickButton = async () => {
-  if (expedienteCargado.value) {
-    cleanExpediente();
-  } else {
-    await getDesarrolloHumano();
-  }
+  expedienteCargado.value ? cleanExpediente() : await getDesarrolloHumano();
 };
 
 const getDesarrolloHumano = async () => {
-  if (expedienteNumber.value === "") {
-    return;
-  }
-  try {
-    const response = await humanoStore.fetchExpediente(expedienteNumber.value);
-    if (response.success) {
-      iconButton.value = "pi pi-refresh";
-      expedienteCargado.value = true;
+  if (!expedienteNumber.value) return;
 
-      emit("onGetExpediente", medicamento);
+  try {
+    let response;
+    if (!props.masterExpediente) {
+      response = await humanoStore.fetchExpediente(expedienteNumber.value);
+      if (response.success && medicamento.value) {
+        expedienteCargado.value = true;
+        if (medicamento.value.expediente === null) {
+          medicamento.value.expediente = expedienteNumber.value;
+        }
+        emit("onGetExpediente", medicamento.value!);
+      }
     } else {
+      response = await humanoStore.fetchExpedienteMaster(
+        expedienteNumber.value
+      );
+      if (response.success) {
+        expedienteCargado.value = true;
+        if (expMother.value && expMother.value.expediente === null) {
+          expMother.value.expediente = expedienteNumber.value;
+          expMother.value.children = [];
+        }
+      }
+      emit("onGetExpediente", expMother.value!);
+    }
+
+    if (!response.success) {
       alerts.toastAlert(
         "Error al recuperar expediente",
         "warn",
@@ -59,11 +85,21 @@ const getDesarrolloHumano = async () => {
   }
 };
 
-const cleanExpediente = () => {
-  iconButton.value = "pi pi-check";
+const cleanExpediente = async () => {
   expedienteCargado.value = false;
   expedienteNumber.value = "";
   emit("onCleanExpediente");
+
+  await nextTick();
+
+  // Forzar una actualización del InputMask
+  if (expediente.value && expediente.value.$el instanceof HTMLInputElement) {
+    expediente.value.$el.value = "";
+    // Disparar un evento de input para asegurar que PrimeVue actualice su estado interno
+    expediente.value.$el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  await nextTick();
   expediente.value?.$el.focus();
 };
 </script>

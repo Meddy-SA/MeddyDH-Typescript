@@ -9,11 +9,13 @@ import {
 import HomeRoute from "./home.ts";
 import AlfabetaRoute from "./alfabeta.ts";
 import UserRoute from "./user.ts";
+import AuthRoute from "./auth.ts";
 
 const routes: RouteRecordRaw[] = [
   { ...HomeRoute },
   { ...AlfabetaRoute },
   { ...UserRoute },
+  { ...AuthRoute },
   { path: "/:pathMatch(.*)*", redirect: "/" },
 ];
 
