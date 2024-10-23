@@ -44,45 +44,12 @@ const getPaciente = async () => {
     return;
   }
   loading.value = true;
-  try {
-    const r = await reqApi.getMethod(`pacientes/${paciente.value.dni}`);
-    if (r.success) {
-      if (r.result) {
-        afiliado.value = { ...r.result };
-        afiliado.value.fullname = `${afiliado.value.nombre} ${afiliado.value.segundoNombre} ${afiliado.value.apellido}`;
-        if (r.result && r.result.members) {
-          members.value = [...r.result.members];
-        }
-      } else if (props.afiliaciones && r.message === "afiliado_no_encontrado") {
-        afiliado.value.fullname = "Afiliado Nuevo 👤";
-      }
-      emit("inGetAfiliado", afiliado.value);
-      iconButton.value = "pi pi-refresh";
-      afiliadoCargado.value = true;
-    } else if (r.message) {
-      alerts.toastAlert(r.message, "warn", 10, "Atención ⚠️");
-    }
-  } catch (error) {
-    alerts.exception(error, 10);
-  } finally {
-    loading.value = false;
-  }
 };
 
 const cleanAfiliado = () => {
   iconButton.value = "pi pi-check";
-  afiliadoCargado.value = false;
-  afiliado.value = modelData;
-  afiliado.value.documento = "";
-  afiliado.value.fullname = "";
-  emit("inCleanAfiliado");
   loading.value = false;
   identifier.value.$el.focus();
-};
-
-const op = ref();
-const toggleGrupoFamiliar = (event: Event) => {
-  op.value.toggle(event);
 };
 </script>
 
@@ -134,4 +101,5 @@ const toggleGrupoFamiliar = (event: Event) => {
         </div>
       </div>
     </div>
+  </div>
 </template>

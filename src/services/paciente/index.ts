@@ -3,11 +3,11 @@ import type { APIResponse, ResponseDTO } from "../types.ts";
 import type { Paciente } from "./types.ts";
 
 const getPaciente = async (dni: string): Promise<APIResponse<Paciente>> => {
-  const res = await http.get<ResponseDTO<Paciente>>(`paciente?dni=${exp}`);
+  const res = await http.get<ResponseDTO<Paciente>>(`paciente?dni=${dni}`);
   if (res.data === null) {
     return {
       success: false,
-      content: {} as MedicamentoDTO,
+      content: {} as Paciente,
       status: res.status,
     };
   }
@@ -16,7 +16,7 @@ const getPaciente = async (dni: string): Promise<APIResponse<Paciente>> => {
 
   return {
     success: r.success,
-    content: r.result ?? ({} as MedicamentoDTO),
+    content: r.result ?? ({} as Paciente),
     status: res.status,
   };
 };
@@ -24,14 +24,14 @@ const getPaciente = async (dni: string): Promise<APIResponse<Paciente>> => {
 const getListaExpedientes = async (
   desde: string,
   hasta: string
-): Promise<APIResponse<MedicamentoDTO[]>> => {
-  const res = await http.get<ResponseDTO<MedicamentoDTO[]>>(
+): Promise<APIResponse<Paciente[]>> => {
+  const res = await http.get<ResponseDTO<Paciente[]>>(
     `desarrolloHumano/Lista?desde=${desde}&hasta=${hasta}`
   );
   if (res.data === null) {
     return {
       success: false,
-      content: [] as MedicamentoDTO[],
+      content: [] as Paciente[],
       status: res.status,
     };
   }
@@ -39,19 +39,16 @@ const getListaExpedientes = async (
   const r = res.data;
   return {
     success: r.success,
-    content: r.result ?? ([] as MedicamentoDTO[]),
+    content: r.result ?? ([] as Paciente[]),
     status: res.status,
   };
 };
 
 const postExpediente = async (
-  medicamento: MedicamentoDTO
-): Promise<APIResponse<MedicamentoDTO>> => {
+  medicamento: Paciente
+): Promise<APIResponse<Paciente>> => {
   const data = JSON.stringify(medicamento);
-  const res = await http.post<ResponseDTO<MedicamentoDTO>>(
-    `desarrolloHumano`,
-    data
-  );
+  const res = await http.post<ResponseDTO<Paciente>>(`desarrolloHumano`, data);
   if (res.data === null) {
     return {
       success: false,
@@ -69,7 +66,7 @@ const postExpediente = async (
 };
 
 export default {
-  getExpediente,
+  getPaciente,
   getListaExpedientes,
   postExpediente,
 };

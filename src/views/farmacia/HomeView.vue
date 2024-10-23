@@ -7,9 +7,6 @@ import type { EnumDTO } from "../../services/system/types";
 // Components
 // import Medicamentos from "./components/ManualDat.vue";
 // Services
-import { useSystemStore } from "../../stores/system";
-import { usePrestadorStore } from "../../stores/prestadores";
-import { useHumanoStore } from "../../stores/humano";
 import { useAlertStore } from "../../stores";
 import { FilterMatchMode } from "@primevue/core/api";
 import { useVuelidate } from "@vuelidate/core";
@@ -32,9 +29,7 @@ import Dialog from "primevue/dialog";
 
 // Constant for Services
 const alert = useAlertStore();
-const system = useSystemStore();
-const prestador = usePrestadorStore();
-const expediente = useHumanoStore();
+
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
@@ -78,16 +73,7 @@ const rules = {
 const v$ = useVuelidate(rules, medDTO);
 
 // Vue Method
-onMounted(async () => {
-  const r = await system.dispatchGetFecha();
-  if (r.success) {
-    minDate.value = new Date();
-  }
-  const { success } = await prestador.dispatchGetFarmacias();
-  if (success) {
-    farmacias.value = prestador.state;
-  }
-});
+onMounted(async () => { });
 
 const formatCurrency = (value: number) => {
   return value.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -203,13 +189,6 @@ const saveMedicamento = async () => {
     medDTO.medicamentos = rowsMedic.value;
     medDTO.farmacia = farmaciaSelected.value ?? baseFarmacia;
     medDTO.prestadoresId = farmaciaSelected.value?.prestadorId ?? 0;
-    const { success } = await expediente.dispatchPostExpediente(medDTO);
-    if (success) {
-      alert.toastAlert(`Se grabo correctamente`, "success", 10, "Genial!");
-      cleanData();
-    } else {
-      alert.toastAlert(`Error al guardar`, "error", 10, "Atención 🟡");
-    }
   } catch (error) {
     alert.exception(error, 10);
   } finally {
