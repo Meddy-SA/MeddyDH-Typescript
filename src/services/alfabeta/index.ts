@@ -56,6 +56,20 @@ export function alfabetaController() {
     }
   }
 
+  async function getMedicineByDate(
+    nombre: string,
+    fecha: string
+  ): Promise<APIResponse<DrogaDTO[]>> {
+    try {
+      const response = await http.get<ResponseDTO<DrogaDTO[]>>(
+        `Alfabeta/ManualDatFecha?filter=${nombre}&date=${fecha}`
+      );
+      return handleResponseData<DrogaDTO[]>(response, []);
+    } catch (error) {
+      return handleServiceError<DrogaDTO[]>(error, []);
+    }
+  }
+
   async function getPrecioPorManualDat(
     id: number
   ): Promise<APIResponse<PrecioDTO[]>> {
@@ -99,6 +113,7 @@ export function alfabetaController() {
     getBuscarMedicamentos,
     getHistorialPrecios,
     getBuscarPorNombreComercial,
+    getMedicineByDate,
     getPrecioPorManualDat,
     postSubirArchivosAlfabeta,
   };

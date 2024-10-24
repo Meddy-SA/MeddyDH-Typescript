@@ -25,7 +25,14 @@ import Dialog from "primevue/dialog";
 import type { DetailsMed } from "../../../services/humano/types.ts";
 import type { DrogaDTO } from "../../../services/alfabeta/types.ts";
 
-const props = defineProps({ row: Object as PropType<DetailsMed | null> });
+const props = defineProps({
+  row: Object as PropType<DetailsMed | null>,
+  fecha: {
+    type: Date,
+    required: false,
+    default: () => new Date(),
+  },
+});
 const emit = defineEmits(["onAdd", "onCancel"]);
 
 const alerts = useAlertStore();
@@ -86,8 +93,12 @@ const searchMedicamento = async (event: { query: string }) => {
   loading.value = true;
   try {
     const q = encodeURIComponent(event.query);
-    await alfabetaStore.fetchMedByName(q);
-    filteredDrogas.value = drogas.value;
+    const fechaString = props.fecha.toISOString().split("T")[0];
+    console.log(fechaString);
+    const { success } = await alfabetaStore.fetchSearchMedicine(q, fechaString);
+    if (success) {
+      filteredDrogas.value = drogas.value;
+    }
   } catch (error) {
     alerts.exception(error, 10);
   } finally {

@@ -334,7 +334,7 @@ const cleanData = () => {
     <Dialog v-model:visible="showDialog" maximizable :style="{ width: '50rem' }" header="Agregar Medicamento"
       :modal="true" class="p-fluid" :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
       <template v-if="showDialog">
-        <Medicamentos :row="product" @on-add="onAddMedicamento" @on-cancel="onCloseMedicamento" />
+        <Medicamentos :row="product" :fecha="medDTO.fecha" @on-add="onAddMedicamento" @on-cancel="onCloseMedicamento" />
       </template>
     </Dialog>
 

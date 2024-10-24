@@ -85,6 +85,25 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     }
   }
 
+  async function fetchSearchMedicine(
+    nombre: string,
+    fecha: string
+  ): Promise<APIResponse<string | null>> {
+    try {
+      const { status, content } = await API.alfabeta.getMedicineByDate(
+        nombre,
+        fecha
+      );
+      if (status === 200) {
+        setDroga(content);
+        return { success: true, content: null };
+      }
+      throw new Error(`Unexpected status ${status}`);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+
   async function fetchPriceHistory(
     filter: number,
     indice: string
@@ -143,6 +162,7 @@ export const useAlfabetaStore = defineStore("alfabeta", () => {
     fetchUpdatedAlfabeta,
     dispatchUploadAlfabeta,
     fetchSearchMedicineAlfabeta,
+    fetchSearchMedicine,
     fetchPriceHistory,
     fetchMedByName,
     fetchPriceByManualDat,
